@@ -1,6 +1,7 @@
 # NeuralNetworkwithCpp
 Simple neural network (Dense) and CNN architecture implemented with C++
-Personal project to study the full implementation of low-level CNN architecture implementation.
+
+A personal project to study the full low-level CNN architecture implementation.
 
 
 It has two sub folders
