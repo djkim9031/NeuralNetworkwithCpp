@@ -11,7 +11,7 @@ It has two sub folders
 
 
 # CNN with MNIST, printed outputs (examples):
-'''
+<pre>
 Start Training.....
 Training model with 100 images
 
@@ -109,5 +109,5 @@ Predicted label is: 4
 
 --------------------
 Program ended with exit code: 0
-'''
+<\pre>
 
