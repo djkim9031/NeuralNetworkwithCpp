@@ -114,3 +114,5 @@ Predicted label is: 4
 Program ended with exit code: 0
 <\pre>
 
+# CNN with MNIST, printed outputs (examples):
+
