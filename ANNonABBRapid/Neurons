@@ -1,0 +1,59 @@
+MODULE Neurons
+    ! weights
+    !weights between input and layer1
+    PERS num w1_0{numInputFeatures,numNeurons};
+    !weights between layer2 and layer1
+    PERS num w2_1{numNeurons,numNeurons2};
+    !Weights between layer3 and layer2
+    PERS num w3_2{numNeurons2,1};
+
+
+
+    !inputs = 1xnumInputFeatures vals.
+    !PERS num z2{numSample,1,numNeurons};
+    !Inputs to layer1, z2 = a1*w1+(b1), where a1 = input.
+    !PERS num z3{numSample,numNeurons,numNeurons2};
+    !Inputs to layer2, z3 = a2*w2+(b2)
+    !PERS num z4{numSample,numNeurons2,1};
+    !Inputs to layer3 (final layer), z4 = a3*w3+(b3)
+
+    !Seeds for random value generation
+    LOCAL VAR num nSeed:=320;
+    LOCAL VAR num nSeed_age:=150;
+
+    FUNC num WeightsInitialize()
+
+        FOR i FROM 1 TO numInputFeatures DO
+            FOR j FROM 1 TO numNeurons DO
+                w1_0{i,j}:=Random(nSeed,nSeed_age);
+            ENDFOR
+        ENDFOR
+
+        FOR i FROM 1 TO numNeurons DO
+            FOR j FROM 1 TO numNeurons2 DO
+                w2_1{i,j}:=Random(nSeed,nSeed_age);
+            ENDFOR
+        ENDFOR
+
+        FOR i FROM 1 TO numNeurons2 DO
+            w3_2{i,1}:=Random(nSeed,nSeed_age);
+        ENDFOR
+
+
+        RETURN 1;
+    ENDFUNC
+
+    FUNC num Random(VAR num nSeed,VAR num nSeed_age)
+        CONST num nModulus:=655;
+        CONST num nMultiplier:=251;
+        CONST num nIncrement:=13849;
+        IF nSeed_age>140 THEN
+            nSeed:=GetTime(\Sec)*GetTime(\Min);
+            nSeed_age:=0;
+        ENDIF
+        nSeed_age:=nSeed_age+1;
+        nSeed:=((nMultiplier*Abs(nSeed))+nIncrement) MOD nModulus;
+        RETURN (nSeed/nModulus)/2;
+    ENDFUNC
+
+ENDMODULE
