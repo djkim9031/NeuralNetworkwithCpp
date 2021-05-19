@@ -13,7 +13,7 @@ It has two sub folders
 3. [Newly included] Neural network implementation on ABB rapid program
 
 
-# CNN with MNIST, printed outputs (examples):
+## CNN with MNIST, printed outputs (examples):
 <pre>
 Start Training.....
 Training model with 100 images
@@ -112,7 +112,20 @@ Predicted label is: 4
 
 --------------------
 Program ended with exit code: 0
-<\pre>
 
-# CNN with MNIST, printed outputs (examples):
+</pre>
+
+## Neural network implementaion on ABB Rapid
+
+<pre>
+Pros-- 
+1. As it is based on C, some optimizations are possible. (Training for 2 input feature, 2 hidden layers- each with 7 and 4 neurons- and 1 final layer with 1 neuron+sigmoid activation takes roughly a minute with 3 sample batches for 150 epochs)
+2. Real-time monitoring of variables (such as weight gradients and weigh values at each layer) are possible. It's possible to constantly check if/where there is an vanishing/exploding gradients, and adjust the random distribution algorithm for weight initialization.
+
+Cons--
+1. Apparently, it is not object-oriented. Without being able to make a class, increasing a network's complexity is very difficult
+2. Random value generation is impossible. Hence, in this code, a workaround method to generate a quasi-random uniform distribution (0,1) for weight initialization had to be implemented
+3. Array dimension can only be up to 3. 4 dimensional arrays are systematically impossible to be implemented. Hence, a CNN with kernel filters cannot be implemented on ABB Rapid.
+</pre>
+
 
