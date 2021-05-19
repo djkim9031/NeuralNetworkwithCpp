@@ -1,0 +1,70 @@
+MODULE Trainer
+    !***********************************************************
+    !
+    ! Module:  Trainer
+    !
+    ! Description:
+    !   Simple Neural Network Demonstration on ABB Rapid
+    !
+    ! Author: KRDOKIM13
+    !
+    ! Version: 1.0
+    !
+    !***********************************************************
+
+
+    !***********************************************************
+    !
+    ! Procedure main
+    !
+    !   This is the entry point of your program
+    !
+    !***********************************************************
+    ! Number of Samples
+    CONST num numSample:=3;
+    
+    !Inputs
+    CONST num numInputFeatures:=2;
+    PERS num inputs{numSample,1,numInputFeatures};
+    PERS num a1{1,numInputFeatures};
+
+
+    !Targets
+    PERS num targets{numSample,1,1};
+
+    !Predictions
+    PERS num pred;
+
+    !Learning parameters
+    PERS num momentum:=1;
+    PERS num lr:=0.07;
+    PERS num epochs:=150;
+
+    !return handler;
+    PERS num r;
+
+    PROC main()
+        FOR n FROM 1 TO numSample DO
+            FOR i FROM 1 TO numInputFeatures DO
+                inputs{n,1,i}:=1;
+            ENDFOR
+            inputs{n,1,2}:=2*(n+1);
+        ENDFOR
+        targets{1,1,1}:=0.3;
+        targets{2,1,1}:=0.2;
+        targets{3,1,1}:=0.1;
+        
+
+        r:=Train();
+
+        TPWrite("Prediction on the given input, the target value should be 0.4");
+        FOR i FROM 1 TO numInputFeatures DO
+            inputs{1,1,i}:=1;
+        ENDFOR
+        inputs{1,1,2}:=2;
+        r:=predict();
+
+        TPWrite("Predicted value: "+ValToStr(pred));
+
+    ENDPROC
+ENDMODULE
