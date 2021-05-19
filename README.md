@@ -10,6 +10,8 @@ It has two sub folders
 
 2. Neural Network: access from main.cpp, full deep neural network (Dense) implemenation
 
+3. [Newly included] Neural network implementation on ABB rapid program
+
 
 # CNN with MNIST, printed outputs (examples):
 <pre>
