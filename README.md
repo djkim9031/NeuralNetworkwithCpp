@@ -122,7 +122,7 @@ Pros--
 1. As it is based on C, some optimizations are possible. 
 (Training for 2 input features, 2 hidden layers- each with 7 and 4 neurons- and 1 final layer with 1 neuron+sigmoid activation takes roughly a minute with 3 sample batches for 150 epochs)
 2. Real-time monitoring of variables (such as weight gradients and weigh values at each layer) are possible. 
-It's possible to constantly check if/where there is an vanishing/exploding gradients, and adjust the random distribution algorithm for weight initialization.
+It's possible to constantly check if/where there are vanishing/exploding gradients, and adjust the random distribution algorithm for weight initialization.
 
 Cons--
 1. Apparently, it is not object-oriented. Without being able to make a class, increasing a network's complexity is very difficult
