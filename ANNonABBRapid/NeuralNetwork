@@ -1,0 +1,233 @@
+MODULE NeuralNetwork
+    CONST num numNeurons:=7;
+    CONST num numNeurons2:=4;
+
+    PERS num z2{numSample,1,numNeurons};
+    PERS num z3{numSample,1,numNeurons2};
+    PERS num z4{numSample,1,1};
+
+    !Activated values
+    PERS num a2{numSample,1,numNeurons};
+    PERS num a3{numSample,1,numNeurons2};
+    PERS num out{numSample,1,1};
+
+    !MSE loss
+    PERS num loss;
+    PERS num e{numSample,1,1};
+
+    !Temp values for internal calc
+    LOCAL PERS num temp:=-1.82475;
+    LOCAL PERS num returnHandler:=1;
+
+    !Derivatives
+    PERS num dL_dA{numSample,1,1};
+    
+    PERS num da3_dz3{numSample,1,numNeurons2};
+    PERS num da2_dz2{numSample,1,numNeurons};
+    
+    PERS num dA_dz4;
+    PERS num dL_dz3{numSample,1,numNeurons2};
+    PERS num dL_dz2{numSample,1,numNeurons};
+
+    PERS num dL_dw32{numNeurons2,1};
+    PERS num dL_dw21{numNeurons,numNeurons2};
+    PERS num dL_dw10{numInputFeatures,numNeurons};
+    
+    !Boolean for training/prediction distinction
+    Local VAR bool training:=FALSE;
+    Local VAR bool prediction:=FALSE;
+
+    FUNC num Train()
+        !Weights initialize
+        returnHandler:=WeightsInitialize();
+        TPErase;
+        TPWrite("Start Training...");
+        training:=TRUE;
+        prediction:=FALSE;
+        FOR epoch FROM 1 TO epochs DO
+
+            returnHandler:=FeedForward();
+
+            loss:=MSE();
+            returnHandler:=BackPropagate();
+
+            TPWrite("Epoch "+ValToStr(epoch)+": loss = "+ValToStr(loss));
+        ENDFOR
+        TPWrite("Training Completed!");
+        RETURN 1;
+    ENDFUNC
+
+    FUNC num MSE()
+        loss:=0;
+        FOR n FROM 1 TO numSample DO
+            e{n,1,1}:=0.5*Pow(Abs(targets{n,1,1}-out{n,1,1}),2);
+            dL_dA{n,1,1}:=(out{n,1,1}-targets{n,1,1});
+            loss:=loss+e{n,1,1};
+        ENDFOR
+
+        RETURN loss/numSample;
+    ENDFUNC
+
+    FUNC num FeedForward()
+
+        !Calculate z values, and activate neurons
+        returnHandler:=Activate();
+        RETURN 1;
+    ENDFUNC
+
+    FUNC num clearGradients()
+        FOR i FROM 1 TO numNeurons2 DO
+            dL_dw32{i,1}:=0;
+        ENDFOR
+        FOR i FROM 1 TO numNeurons DO
+            FOR j FROM 1 TO numNeurons2 DO
+                dL_dw21{i,j}:=0;
+            ENDFOR
+        ENDFOR
+        FOR i FROM 1 TO numInputFeatures DO
+            FOR j FROM 1 TO numNeurons DO
+                dL_dw10{i,j}:=0;
+            ENDFOR
+        ENDFOR
+        RETURN 1;
+    ENDFUNC
+
+    FUNC num BackPropagate()
+        returnHandler:=clearGradients();
+
+        FOR n FROM 1 TO numSample DO
+            !First, let's calculate dL/d(w3_2) = dL/dA* dA/dz4* dz4/d(w3_2) = dL/dA*dA/dz4*a3
+            !dA/dz4 = derivative of the sigmoid function = out*(1-out)
+            !{1,1}*{1,1}*{1,numNeurons} = {1,numNeurons} -> Need to transpose
+            dA_dz4:=out{n,1,1}*(1-out{n,1,1});
+            FOR i FROM 1 TO numNeurons2 DO
+                dL_dw32{i,1}:=dL_dw32{i,1}+dL_dA{n,1,1}*dA_dz4*a3{n,1,i};
+            ENDFOR
+
+            !Now, let's calculate dL/d(w2_1) = dL/dA*dA/dz4*dz4/da3*da3/dz3*dz3/d(w2_1) = dL/dA*dA/dz4*dz4/da3*da3/dz3*a2
+            ! = dL/dA * dA/dz4 * w3_2 * (da3_dz3) *a2 => a2_T * temp_da3_dz3
+            ! = (1)   * (1)  * (numNeurons2,1) , (1,numNeurons2), (1,numNeurons)
+            FOR i FROM 1 TO numNeurons2 DO
+                dL_dz3{n,1,i}:=dL_dA{n,1,1}*dA_dz4*w3_2{i,1}*da3_dz3{n,1,i};
+                !(1,numNeurons2)
+            ENDFOR
+            FOR i FROM 1 TO numNeurons DO
+                FOR j FROM 1 TO numNeurons2 DO
+                    dL_dw21{i,j}:=dL_dw21{i,j}+a2{n,1,i}*dL_dz3{n,1,j}; !(numNeurons, numNeurons2), !since a2 and dL_dz3 has (1,num_x) shape, this multiplication is equivalent to dot of a2_T.
+                ENDFOR
+            ENDFOR
+            
+            !Finally, let's calculate dL/d(w1_0). First, dL/dz3 = dL/dA*dA/dz4*dz4/da3*da3/dz3 = dL_dz3
+            !so, dL/d(w1_0) = dL/dz3 * dz3/da2 * da2/dz2 * dz2/d(w1_0) 
+            != dL_dz3 * w2_1 * da2/dz2 * Input
+            !=(1,numNeurons2),(numNeurons,numNeurons2),(1,numNeurons),(1,numInputFeatures)
+            FOR i FROM 1 TO numNeurons DO
+                temp:=0; !For dot product between dL_dz3 and w2_1.T
+                FOR j FROM 1 TO numNeurons2 DO 
+                    temp:=temp+dL_dz3{n,1,j}*w2_1{i,j};
+                ENDFOR
+                dL_dz2{n,1,i}:=temp*da2_dz2{n,1,i};
+            ENDFOR
+            FOR i FROM 1 TO numInputFeatures DO
+                FOR j FROM 1 TO numNeurons DO
+                    dL_dw10{i,j}:=dL_dw10{i,j}+inputs{n,1,i}*dL_dz2{n,1,j};
+                ENDFOR
+            ENDFOR
+        ENDFOR
+
+        returnHandler:=updateWeights();
+        RETURN 1;
+
+    ENDFUNC
+    
+
+    FUNC num updateWeights()
+        !Update the weights
+        FOR i FROM 1 TO numInputFeatures DO
+            FOR j FROM 1 TO numNeurons DO
+                w1_0{i,j}:=momentum*w1_0{i,j}-lr*dL_dw10{i,j}/numSample;
+            ENDFOR
+        ENDFOR
+        FOR i FROM 1 TO numNeurons DO
+            FOR j FROM 1 TO numNeurons2 DO
+                w2_1{i,j}:=momentum*w2_1{i,j}-lr*dL_dw21{i,j}/numSample;
+            ENDFOR
+        ENDFOR
+        FOR i FROM 1 TO numNeurons2 DO
+            w3_2{i,1}:=momentum*w3_2{i,1}-lr*dL_dw32{i,1}/numSample;
+        ENDFOR
+        RETURN 1;
+    ENDFUNC
+
+    LOCAL FUNC num Activate()
+        FOR n FROM 1 TO numSample DO
+            !First getting the z values at each layer
+
+            FOR j_2 FROM 1 TO numNeurons DO
+                temp:=0;
+                FOR k FROM 1 TO numInputFeatures DO
+                    temp:=temp+inputs{n,1,k}*w1_0{k,j_2};
+                ENDFOR
+                z2{n,1,j_2}:=temp;
+            ENDFOR
+
+            ! layer 1 = ReLU activation
+            FOR j FROM 1 TO numNeurons DO
+                !a2{n,i,j}:=z2{n,i,j};
+                !da2_dz2{n,i,j}:=1;
+                IF z2{n,1,j}<0 THEN
+                    a2{n,1,j}:=-0.0001*z2{n,1,j};
+                    da2_dz2{n,1,j}:=-0.0001;
+                ELSE
+                    a2{n,1,j}:=z2{n,1,j};
+                    da2_dz2{n,1,j}:=1;
+                ENDIF
+            ENDFOR
+
+            ! Getting z for layer 2
+            FOR j_3 FROM 1 TO numNeurons2 DO
+                temp:=0;
+                FOR k FROM 1 TO numNeurons DO
+                    temp:=temp+a2{n,1,k}*w2_1{k,j_3};
+                ENDFOR
+                z3{n,1,j_3}:=temp;
+            ENDFOR
+
+            ! layer 2 = ReLU activation
+            FOR j FROM 1 TO numNeurons2 DO
+                IF z3{n,1,j}<0 THEN
+                    a3{n,1,j}:=-0.0001*z3{n,1,j};
+                    da3_dz3{n,1,j}:=-0.0001;
+                ELSE
+                    a3{n,1,j}:=z3{n,1,j};
+                    da3_dz3{n,1,j}:=1;
+                ENDIF
+            ENDFOR
+
+            ! Getting z for layer 3 
+            temp:=0;
+            FOR k FROM 1 TO numNeurons2 DO
+                temp:=temp+a3{n,1,k}*w3_2{k,1};
+            ENDFOR
+            z4{n,1,1}:=temp;
+
+            ! sigmoid actiation 
+            IF training THEN
+                out{n,1,1}:=(1/(1+Exp(-1*z4{n,1,1})));
+            ELSEIF prediction THEN
+                pred:=(1/(1+Exp(-1*z4{1,1,1})));
+            ENDIF
+            
+        ENDFOR
+
+        RETURN 1;
+    ENDFUNC
+
+    FUNC num predict()
+        training:=FALSE;
+        prediction:=TRUE;
+        returnHandler:=FeedForward();
+        RETURN 1;
+    ENDFUNC
+
+ENDMODULE
