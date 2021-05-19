@@ -120,8 +120,7 @@ Program ended with exit code: 0
 <pre>
 Pros-- 
 1. As it is based on C, some optimizations are possible. 
-(Training for 2 input feature, 2 hidden layers- each with 7 and 4 neurons- and 1 final layer with 1 neuron+sigmoid activation takes roughly a minute with 3 sample batches for 150 epochs)
-
+(Training for 2 input features, 2 hidden layers- each with 7 and 4 neurons- and 1 final layer with 1 neuron+sigmoid activation takes roughly a minute with 3 sample batches for 150 epochs)
 2. Real-time monitoring of variables (such as weight gradients and weigh values at each layer) are possible. 
 It's possible to constantly check if/where there is an vanishing/exploding gradients, and adjust the random distribution algorithm for weight initialization.
 
